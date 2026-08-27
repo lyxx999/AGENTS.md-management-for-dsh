@@ -1,0 +1,9 @@
+# @lyxx/dsh-agents-md：指令文件（AGENTS.md）管理（持久化组合条目）。
+#
+# 插入一行 `agents-md`（行 name 即 npm 包名，bundle 解析与激活以它为准）：
+# host 半部注册 agentsMd Remote 服务与 agent-instructions-ui 设置命名空间，
+# client 半部在设置一级页「指令文件 (AGENTS.md)」提供全局/工作区文件的
+# 创建、查看、编辑、删除。
+- insert:
+  - id: agents-md
+    name: '@lyxx/dsh-agents-md'
