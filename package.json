@@ -1,7 +1,7 @@
 {
   "name": "@lyxx/dsh-agents-md",
   "description": "DSH 指令文件（AGENTS.md）管理：在设置页创建/查看/编辑/删除全局与工作区指令文件，支持自定义全局目录、镜像同步与渲染预算告警",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
