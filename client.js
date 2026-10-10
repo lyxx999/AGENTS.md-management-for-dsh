@@ -68,7 +68,8 @@ window.__ModuleLoader__.load({
 				mirrorDegraded: 'The file was saved, but the mirror to the loader read point failed.',
 				footer: 'Changes take effect at the next agent step automatically — no restart required.',
 				saveOk: 'Saved.', deleteOk: 'Deleted.', saveDirOk: 'Global directory updated. The next save writes there.',
-				error: 'Operation failed',
+				error: 'Operation failed', sameAsSource: 'same as source',
+				cancel: 'Cancel', delTitleGlobal: 'Delete global AGENTS.md', delTitleWs: 'Delete this workspace AGENTS.md',
 			},
 			zh: {
 				nav: '指令文件 (AGENTS.md)', title: '指令文件 (AGENTS.md)',
@@ -89,54 +90,86 @@ window.__ModuleLoader__.load({
 				mirrorDegraded: '文件已保存，但镜像到加载器读取点失败。',
 				footer: '保存后下一个 agent step 自动生效，无需重启。',
 				saveOk: '已保存。', deleteOk: '已删除。', saveDirOk: '全局目录已更新，下一次保存将写入新位置。',
-				error: '操作失败',
+				error: '操作失败', sameAsSource: '与源文件相同',
+				cancel: '取消', delTitleGlobal: '删除全局 AGENTS.md', delTitleWs: '删除该工作区 AGENTS.md',
 			},
 		};
 
 		/* ----------------------------- styles ----------------------------- */
+		// Restyled to match the reference project's look: roomier spacing,
+		// rounded cards, independent source/mirror status cards, full-row
+		// clickable workspace heads, ok/warn/error status bars, and a modal
+		// delete-confirm overlay. Tokens are the dsw alias set; fallbacks are
+		// dark-safe neutrals.
 		const styles = [
-			'.amdPage{display:flex;flex-direction:column;gap:16px;padding:2px 0;max-width:880px}',
-			'.amdTitle{font-size:18px;font-weight:600;color:var(--dsw-alias-label-primary);margin:0}',
-			'.amdIntro{font-size:13px;color:var(--dsw-alias-label-secondary);margin:0 0 4px;line-height:1.5}',
-			'.amdSection{display:flex;flex-direction:column;gap:10px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-1);padding:14px}',
-			'.amdSectionHead{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--dsw-alias-label-primary)}',
-			'.amdChevron{font-size:11px;color:var(--dsw-alias-label-secondary);width:12px;text-align:center}',
-			'.amdFieldLabel{font-size:12px;color:var(--dsw-alias-label-secondary)}',
-			'.amdHint{font-size:12px;color:var(--dsw-alias-label-secondary);line-height:1.45}',
-			'.amdRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}',
-			'.amdDirInput{flex:1;min-width:220px;font-size:13px;padding:7px 9px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);outline:none}',
-			'.amdDirInput:focus{border-color:var(--dsw-alias-brand-primary)}',
-			'.amdStatusRow{display:flex;gap:10px;flex-wrap:wrap}',
-			'.amdStatus{display:flex;align-items:center;gap:7px;font-size:12px;padding:7px 10px;border-radius:8px;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-secondary);flex:1;min-width:180px}',
-			'.amdDot{width:8px;height:8px;border-radius:50%;flex:none}',
-			'.amdOk{background:var(--dsw-alias-state-success-primary)}',
-			'.amdNo{background:var(--dsw-alias-state-idle-primary)}',
-			'.amdWarnDot{background:var(--dsw-alias-state-warn-primary)}',
-			'.amdBtn{font-size:13px;padding:7px 12px;border-radius:8px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);cursor:pointer}',
-			'.amdBtn:hover{border-color:var(--dsw-alias-label-secondary)}',
-			'.amdBtn.primary{background:var(--dsw-alias-brand-primary);border-color:var(--dsw-alias-brand-primary);color:#fff}',
-			'.amdBtn.primary:hover{opacity:.92}',
-			'.amdBtn.danger{color:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary)}',
+			'.amdPage{display:flex;flex-direction:column;gap:16px;padding:4px 8px;box-sizing:border-box;max-width:960px}',
+			'.amdTitle{font-size:18px;margin:0;color:var(--dsw-alias-label-primary,#f3f4f6)}',
+			'.amdIntro{color:var(--dsw-alias-label-secondary,#9aa0a6);font-size:12px;margin:0 0 8px;line-height:18px}',
+			'.amdSectionHead{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;margin:0 0 8px;color:var(--dsw-alias-label-primary,#f3f4f6)}',
+			'.amdHint{color:var(--dsw-alias-label-secondary,#9aa0a6);font-size:12px;margin:0 0 8px;line-height:18px}',
+			'.amdDirrow{display:flex;align-items:center;gap:8px;margin:8px 0}',
+			'.amdDirrow label{white-space:nowrap;font-size:13px;color:var(--dsw-alias-label-secondary,#9aa0a6)}',
+			'.amdDirInput{flex:1;min-width:0;padding:6px 10px;border-radius:8px;border:1px solid var(--dsw-alias-border-l2,#4a4d52);background:var(--dsw-alias-bg-base,#1f2023);color:var(--dsw-alias-label-primary,#f3f4f6);font-size:13px;box-sizing:border-box;outline:none}',
+			'.amdDirInput::placeholder{color:var(--dsw-alias-label-tertiary,#7d838a)}',
+			'.amdDirInput:focus{border-color:var(--dsw-alias-border-l4,#6b7076)}',
+			'.amdCards{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0}',
+			'.amdCard{flex:1;min-width:260px;border:1px solid var(--dsw-alias-border-l2,#4a4d52);border-radius:12px;padding:10px 12px;font-size:12px;display:flex;flex-direction:column;gap:4px;box-sizing:border-box}',
+			'.amdCardLabel{font-weight:500;font-size:13px;color:var(--dsw-alias-label-primary,#f3f4f6)}',
+			'.amdCardPath{font-family:ui-monospace,Consolas,monospace;font-size:11px;word-break:break-all;color:var(--dsw-alias-label-tertiary,#7d838a)}',
+			'.amdCardStatus{font-size:12px;color:var(--dsw-alias-label-secondary,#9aa0a6)}',
+			'.amdStatus{font-size:12px;padding:8px 10px;border-radius:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0;color:var(--dsw-alias-label-primary,#f3f4f6)}',
+			'.amdStatusOk{background:rgba(34,197,94,.12);color:var(--dsw-alias-state-success-primary,#4ed17e)}',
+			'.amdStatusWarn{background:rgba(217,134,41,.14);color:var(--dsw-alias-state-warn-primary,#dd8629)}',
+			'.amdStatusError{background:rgba(220,60,60,.13);color:var(--dsw-alias-state-error-primary,#f25a5a)}',
+			'.amdStatus button{margin-left:auto}',
+			'.amdBtn{padding:6px 14px;border-radius:8px;border:1px solid var(--dsw-alias-border-l2,#4a4d52);background:var(--dsw-alias-bg-layer-2,#2a2c31);color:var(--dsw-alias-label-primary,#f3f4f6);font-size:13px;cursor:pointer}',
+			'.amdBtn:hover:not(:disabled){background:var(--dsw-alias-bg-overlay,#33363c)}',
+			'.amdBtn:active:not(:disabled){background:var(--dsw-alias-bg-overlay,#3a3d44)}',
 			'.amdBtn:disabled{opacity:.5;cursor:default}',
-			'.amdTextarea{width:100%;min-height:180px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.5;padding:10px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);resize:vertical;outline:none;box-sizing:border-box}',
-			'.amdTextarea:focus{border-color:var(--dsw-alias-brand-primary)}',
-			'.amdEditor{display:flex;flex-direction:column;gap:8px;padding:10px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-base)}',
-			'.amdWarn{font-size:12px;color:var(--dsw-alias-state-warn-primary);display:flex;align-items:center;gap:6px}',
-			'.amdError{font-size:12px;color:var(--dsw-alias-state-error-primary);display:flex;align-items:center;gap:6px;flex-wrap:wrap}',
-			'.amdWsRow{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-base);cursor:pointer;font-size:13px;color:var(--dsw-alias-label-primary)}',
-			'.amdWsRow:hover{border-color:var(--dsw-alias-label-secondary)}',
-			'.amdWsPath{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:ui-monospace,monospace;font-size:12.5px}',
-			'.amdWsSize{font-size:12px;color:var(--dsw-alias-label-secondary);white-space:nowrap}',
-			'.amdWsNone{font-size:12px;color:var(--dsw-alias-state-idle-primary)}',
-			'.amdWsBody{padding:0 4px 2px}',
-			'.amdFooter{font-size:12px;color:var(--dsw-alias-label-secondary)}',
-			'.amdBootError{padding:20px;font-size:13px;color:var(--dsw-alias-label-primary)}',
-			'.amdBootError h2{font-size:15px;margin:0 0 12px;color:var(--dsw-alias-state-error-primary)}',
-			'.amdBootError pre{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);border-radius:8px;padding:12px;overflow:auto;white-space:pre-wrap;word-break:break-all;color:var(--dsw-alias-state-error-primary)}',
-			'.amdReadonly{font-size:12.5px;color:var(--dsw-alias-state-warn-primary);padding:10px 12px;border:1px dashed var(--dsw-alias-state-warn-primary);border-radius:8px;background:var(--dsw-alias-bg-layer-1)}',
-			'.amdEmpty{font-size:13px;color:var(--dsw-alias-label-secondary)}',
-			'.amdLabel{font-size:12px;color:var(--dsw-alias-label-secondary)}',
+			'.amdBtnDanger{color:var(--dsw-alias-state-error-primary,#f25a5a);border-color:var(--dsw-alias-state-error-primary,#f25a5a);background:transparent}',
+			'.amdBtnDanger:hover:not(:disabled){background:rgba(242,90,90,.15)}',
+			'.amdRows{display:flex;flex-direction:column;gap:8px}',
+			'.amdRow{border:1px solid var(--dsw-alias-border-l2,#4a4d52);border-radius:12px;padding:0;overflow:hidden}',
+			'.amdRowHead{width:100%;padding:10px 12px;background:transparent;border:none;text-align:left;font-size:13px;box-sizing:border-box;display:flex;align-items:center;gap:10px;cursor:pointer;color:var(--dsw-alias-label-primary,#f3f4f6)}',
+			'.amdRowHead:hover:not(:disabled){background:rgba(255,255,255,.08)}',
+			'.amdRowTitle{font-weight:500;color:var(--dsw-alias-label-primary,#f3f4f6)}',
+			'.amdRowPath{font-family:ui-monospace,Consolas,monospace;font-size:11px;color:var(--dsw-alias-label-tertiary,#7d838a);word-break:break-all;flex:1;min-width:0}',
+			'.amdRowMeta{white-space:nowrap;color:var(--dsw-alias-label-secondary,#9aa0a6);font-size:12px}',
+			'.amdEditor{border:1px solid var(--dsw-alias-border-l2,#4a4d52);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;margin-top:8px}',
+			'.amdEditorHead{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--dsw-alias-label-primary,#f3f4f6)}',
+			'.amdEditorHead code{font-size:11px;word-break:break-all;color:var(--dsw-alias-label-tertiary,#7d838a)}',
+			'.amdEditorBytes{font-size:11px;color:var(--dsw-alias-label-tertiary,#7d838a)}',
+			'.amdTextarea{width:100%;min-height:320px;box-sizing:border-box;padding:10px;border-radius:8px;border:1px solid var(--dsw-alias-border-l2,#4a4d52);font-family:ui-monospace,Consolas,monospace;font-size:12px;line-height:18px;resize:vertical;background:var(--dsw-alias-bg-base,#1f2023);color:var(--dsw-alias-label-primary,#f3f4f6);outline:none}',
+			'.amdTextarea:focus{border-color:var(--dsw-alias-border-l4,#6b7076)}',
+			'.amdActions{display:flex;gap:8px;justify-content:flex-end}',
+			'.amdOverlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center}',
+			'.amdMask{position:absolute;inset:0;background:rgba(0,0,0,.48)}',
+			'.amdDialog{position:relative;background:var(--dsw-alias-bg-layer-2,#26282d);border:1px solid var(--dsw-alias-border-l2,#54585e);border-radius:16px;padding:20px;width:480px;max-width:calc(100vw - 48px);box-shadow:0 12px 40px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:10px;box-sizing:border-box;color:var(--dsw-alias-label-primary,#f3f4f6)}',
+			'.amdDialog h3{margin:0;font-size:15px;color:var(--dsw-alias-label-primary,#f3f4f6)}',
+			'.amdDialog code{word-break:break-all;font-size:11px;background:var(--dsw-alias-bg-overlay,#33363c);padding:4px 6px;border-radius:6px}',
+			'.amdFooter{font-size:12px;color:var(--dsw-alias-label-secondary,#9aa0a6)}',
+			'.amdBootError{padding:20px;font-size:13px;color:var(--dsw-alias-label-primary,#f3f4f6)}',
+			'.amdBootError h2{font-size:15px;margin:0 0 12px;color:var(--dsw-alias-state-error-primary,#f25a5a)}',
+			'.amdBootError pre{background:var(--dsw-alias-bg-layer-2,#26282d);border:1px solid var(--dsw-alias-border-l1,#4a4d52);border-radius:8px;padding:12px;overflow:auto;white-space:pre-wrap;word-break:break-all;color:var(--dsw-alias-state-error-primary,#f25a5a)}',
+			'.amdReadonly{padding:24px;display:flex;flex-direction:column;gap:8px;max-width:720px;color:var(--dsw-alias-label-primary,#f3f4f6)}',
+			'.amdEmpty{font-size:13px;color:var(--dsw-alias-label-secondary,#9aa0a6)}',
 		].join('\n');
+
+		// Inject the stylesheet once per page load (idempotent via the
+		// data-plugin-css guard, mirroring the reference plugin). Without this
+		// the className attributes render but no CSS applies → an unstyled page.
+		const CSS_TAG_ID = 'agents-md-manager/page.css';
+		(function injectCss() {
+			try {
+				if (typeof document === 'undefined') return;
+				if (document.querySelector('style[data-plugin-css="' + CSS_TAG_ID + '"]') !== null) return;
+				const tag = document.createElement('style');
+				tag.dataset.plugin = 'agents-md-manager';
+				tag.dataset.pluginCss = CSS_TAG_ID;
+				tag.textContent = styles;
+				document.head.appendChild(tag);
+			} catch {}
+		})();
 
 		function fmtSize(n) {
 			if (n == null) return '';
@@ -186,6 +219,7 @@ window.__ModuleLoader__.load({
 			const [err, setErr] = React.useState(null);
 			const [notice, setNotice] = React.useState(null);
 			const [mirrorWarn, setMirrorWarn] = React.useState(null);
+			const [confirmingDelete, setConfirmingDelete] = React.useState(false);
 
 			const doLoad = async (silent) => {
 				try {
@@ -212,7 +246,7 @@ window.__ModuleLoader__.load({
 					setMtime(r.mtimeMs || 0);
 					setExists(true);
 					if (isGlobal && r && r.mirrored === false) setMirrorWarn(r.mirrorError || null);
-					setNotice(r && r.backupPath ? t('saveOk') + ' (备份 ' + r.backupPath + ')' : t('saveOk'));
+					setNotice(t('saveOk'));
 					onSaved && onSaved();
 				} catch (e) {
 					if (e && e.code === 'stale') setErr(t('mtimeConflict'));
@@ -222,9 +256,7 @@ window.__ModuleLoader__.load({
 			};
 
 			const del = async () => {
-				const ok = window.confirm(isGlobal ? t('confirmDeleteGlobal') : t('confirmDeleteWorkspace'));
-				if (!ok) return;
-				setBusy(true); setErr(null);
+				setBusy(true); setErr(null); setConfirmingDelete(false);
 				try {
 					await callRemote('deleteFile', [path]);
 					setText(''); setMtime(0); setExists(false);
@@ -245,11 +277,16 @@ window.__ModuleLoader__.load({
 				finally { setBusy(false); }
 			};
 
+			const confirmText = isGlobal ? t('confirmDeleteGlobal') : t('confirmDeleteWorkspace');
 			return h('div', { className: 'amdEditor' },
+				h('div', { className: 'amdEditorHead' },
+					h('code', null, path),
+					h('span', { className: 'amdEditorBytes' }, fmtSize(bytes) + (overBudget ? '  ⚠ 超出渲染预算' : '')),
+				),
 				overHard
-					? h('div', { className: 'amdError' }, '⛔ ' + t('tooLarge'))
+					? h('div', { className: 'amdStatus amdStatusError' }, t('tooLarge'))
 					: overBudget
-						? h('div', { className: 'amdWarn' }, '⚠ ' + t('budgetWarning'))
+						? h('div', { className: 'amdStatus amdStatusWarn' }, t('budgetWarning'))
 						: null,
 				h('textarea', {
 					className: 'amdTextarea',
@@ -259,22 +296,29 @@ window.__ModuleLoader__.load({
 					placeholder: t('none'),
 					onChange: (e) => setText(e.target.value),
 				}),
-				err ? h('div', { className: 'amdError' }, '⚠ ' + err) : null,
-				notice ? h('div', { className: 'amdWarn', style: { color: 'var(--dsw-alias-state-success-primary)' } }, '✓ ' + notice) : null,
-				h('div', { className: 'amdRow' },
-					readOnly
-						? h('span', { className: 'amdHint' }, t('readonlyNotice'))
-						: h(React.Fragment, null,
-							h('button', { className: 'amdBtn primary', disabled: busy || overHard, onClick: save }, t('save')),
-							h('button', { className: 'amdBtn danger', disabled: busy || !exists, onClick: del }, t('delete')),
-							h('button', { className: 'amdBtn', disabled: busy, onClick: () => doLoad(false) }, t('reload')),
-							mirrorWarn
-								? h(React.Fragment, null,
-									h('span', { className: 'amdWarn' }, '⚠ ' + t('mirrorDegraded')),
-									h('button', { className: 'amdBtn', disabled: busy, onClick: retryMirror }, t('retry')))
-								: null,
+				err ? h('div', { className: 'amdStatus amdStatusError' }, err) : null,
+				notice ? h('div', { className: 'amdStatus amdStatusOk' }, notice) : null,
+				mirrorWarn
+					? h('div', { className: 'amdStatus amdStatusWarn' }, t('mirrorDegraded'),
+						h('button', { className: 'amdBtn', disabled: busy, onClick: retryMirror }, t('retry')))
+					: null,
+				!readOnly ? h('div', { className: 'amdActions' },
+					h('button', { className: 'amdBtn amdBtnDanger', disabled: busy || !exists, onClick: () => setConfirmingDelete(true) }, t('delete')),
+					h('button', { className: 'amdBtn', disabled: busy, onClick: () => doLoad(false) }, t('reload')),
+					h('button', { className: 'amdBtn', disabled: busy || overHard, onClick: save }, t('save')),
+				) : h('div', { className: 'amdHint' }, t('readonlyNotice')),
+				confirmingDelete ? h('div', { className: 'amdOverlay' },
+					h('div', { className: 'amdMask', onClick: () => { if (!busy) setConfirmingDelete(false); } }),
+					h('div', { className: 'amdDialog', role: 'dialog', 'aria-modal': true },
+						h('h3', null, isGlobal ? t('delTitleGlobal') : t('delTitleWs')),
+						h('p', { style: { margin: 0, fontSize: 13, color: 'var(--dsw-alias-label-secondary,#9aa0a6)' } }, confirmText),
+						h('code', null, path),
+						h('div', { className: 'amdActions' },
+							h('button', { className: 'amdBtn', disabled: busy, onClick: () => setConfirmingDelete(false) }, t('cancel')),
+							h('button', { className: 'amdBtn amdBtnDanger', disabled: busy, onClick: del }, t('delete')),
 						),
-				),
+					),
+				) : null,
 			);
 		}
 
@@ -290,35 +334,39 @@ window.__ModuleLoader__.load({
 		}
 
 		/* --------------------------- status card -------------------------- */
-		function StatusPill({ label, exists, size, dotClass, labelForExist, labelForMissing }) {
-			return h('div', { className: 'amdStatus' },
-				h('span', { className: 'amdDot ' + dotClass }),
-				h('span', null, label + ': ' + (exists ? labelForExist : labelForMissing) + (exists && size ? ' · ' + fmtSize(size) : '')),
+		function FileCard(props) {
+			const { label, path, exists, sizeBytes, statusText } = props;
+			return h('div', { className: 'amdCard' },
+				h('div', { className: 'amdCardLabel' }, label),
+				path ? h('div', { className: 'amdCardPath' }, path) : null,
+				h('div', { className: 'amdCardStatus' }, statusText + (exists && sizeBytes ? ' · ' + fmtSize(sizeBytes) : '')),
 			);
+		}
+
+		function StatusLine(props) {
+			const { kind, children } = props;
+			const cls = kind === 'ok' ? 'amdStatusOk' : kind === 'warn' ? 'amdStatusWarn' : kind === 'error' ? 'amdStatusError' : '';
+			return h('div', { className: 'amdStatus ' + cls }, children);
 		}
 
 		/* ------------------------- workspace row -------------------------- */
 		function WorkspaceRow(props) {
 			const { t, readOnly, row, expanded, onToggle, onChanged } = props;
 			const file = row.agentsMd && row.agentsMd.file;
-			return h('div', null,
-				h('div', {
-					className: 'amdWsRow',
-					onClick: () => file && onToggle(),
-					role: 'button',
-					tabIndex: 0,
-					onKeyDown: (e) => { if (file && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onToggle(); } },
+			const disabled = !file;
+			const meta = (row.agentsMd && row.agentsMd.exists ? fmtSize(row.agentsMd.sizeBytes) : t('none')) + ' · ' + row.sessionCount + ' 会话';
+			return h('div', { className: 'amdRow' },
+				h('button', {
+					type: 'button', className: 'amdRowHead', disabled: disabled, onClick: () => onToggle(),
+					'aria-expanded': expanded ? 'true' : 'false',
 				},
-					h('span', { className: 'amdChevron' }, expanded ? '▼' : '▶'),
-					h('span', { className: 'amdWsPath', title: row.path }, row.title + '  —  ' + row.path),
-					row.agentsMd && row.agentsMd.exists
-						? h('span', { className: 'amdWsSize' }, fmtSize(row.agentsMd.sizeBytes) + ' · ' + row.sessionCount + ' 会话')
-						: h('span', { className: 'amdWsNone' }, t('none') + ' · ' + row.sessionCount + ' 会话'),
+					h('span', null, disabled ? '·' : (expanded ? '▼' : '▶')),
+					h('span', { className: 'amdRowTitle' }, row.title),
+					h('span', { className: 'amdRowPath' }, row.path),
+					h('span', { className: 'amdRowMeta' }, meta),
 				),
 				expanded && file
-					? h('div', { className: 'amdWsBody' },
-						h(Editor, { t, readOnly, isGlobal: false, path: file, onSaved: onChanged, onDeleted: onChanged }),
-					)
+					? h(Editor, { t, readOnly, isGlobal: false, path: file, onSaved: onChanged, onDeleted: onChanged })
 					: null,
 			);
 		}
@@ -389,56 +437,48 @@ window.__ModuleLoader__.load({
 			if (!ready) return h('div', { className: 'amdPage' }, h('div', { className: 'amdEmpty' }, '…'));
 
 			return h('div', { className: 'amdPage' },
-				h('h2', { className: 'amdTitle' }, t('title')),
+				h('h1', { className: 'amdTitle' }, t('title')),
 				h('p', { className: 'amdIntro' }, t('intro')),
-				readOnly ? h('div', { className: 'amdReadonly' }, t('readonlyNotice')) : null,
 
 				/* Global file section */
-				h('div', { className: 'amdSection' },
-					h('div', { className: 'amdSectionHead' },
-						h('span', { className: 'amdChevron' }, '▤'), t('global')),
-					h('label', { className: 'amdFieldLabel', htmlFor: 'amd-dir' }, t('globalDir')),
-					h('div', { className: 'amdRow' },
-						h('input', {
-							id: 'amd-dir', className: 'amdDirInput', value: dirInput,
-							disabled: readOnly, placeholder: '~/.dsh/AGENTS.md',
-							onChange: (e) => setDirInput(e.target.value),
-						}),
-						!readOnly ? h('button', { className: 'amdBtn', disabled: busy, onClick: saveDir }, t('saveGlobalDir')) : null,
-					),
-					h('div', { className: 'amdHint' }, t('globalDirHint')),
-					g ? h('div', { className: 'amdStatusRow' },
-						h(StatusPill, {
-							label: t('source'), exists: !!g.exists, size: g.sizeBytes || 0,
-							dotClass: g.exists ? 'amdOk' : 'amdNo',
-							labelForExist: t('exists'), labelForMissing: t('missing'),
-						}),
-						h(StatusPill, {
-							label: t('mirror'), exists: !!g.mirrorExists, size: null,
-							dotClass: (isMirrorSource || g.mirrorExists) ? 'amdOk' : 'amdNo',
-							labelForExist: isMirrorSource ? t('exists') : t('synced'), labelForMissing: t('notSynced'),
-						}),
-					) : null,
-					g && g.exists && (g.sizeBytes || 0) > (g.renderBudgetBytes || BUDGET)
-						? h('div', { className: 'amdWarn' }, '⚠ ' + t('budgetWarning'))
-						: null,
-					err ? h('div', { className: 'amdError' }, '⚠ ' + err) : null,
-					notice ? h('div', { className: 'amdWarn', style: { color: 'var(--dsw-alias-state-success-primary)' } }, '✓ ' + notice) : null,
-					globalEditing && globalFile
-						? h(Editor, { t, readOnly, isGlobal: true, path: globalFile, onSaved: onChanged, onDeleted: onChanged })
-						: !readOnly
-							? h('button', { className: 'amdBtn primary', disabled: !globalFile, onClick: () => setGlobalEditing(true) }, t('editGlobal'))
-							: null,
-					globalEditing && !readOnly ? h('button', { className: 'amdBtn', onClick: () => { setGlobalEditing(false); onChanged(); } }, t('close')) : null,
+				h('h2', { className: 'amdSectionHead' }, t('global')),
+				h('p', { className: 'amdHint' }, t('globalDirHint')),
+				h('div', { className: 'amdDirrow' },
+					h('label', { htmlFor: 'amd-dir' }, t('globalDir')),
+					h('input', {
+						id: 'amd-dir', className: 'amdDirInput', value: dirInput,
+						disabled: readOnly, placeholder: '~/.dsh/AGENTS.md',
+						onChange: (e) => setDirInput(e.target.value),
+					}),
+					!readOnly ? h('button', { type: 'button', className: 'amdBtn', disabled: busy, onClick: saveDir }, t('saveGlobalDir')) : null,
 				),
+				g ? h('div', { className: 'amdCards' },
+					h(FileCard, {
+						label: t('source'), path: g.file, exists: !!g.exists, sizeBytes: g.sizeBytes || 0,
+						statusText: g.exists ? t('exists') : t('missing'),
+					}),
+					h(FileCard, {
+						label: t('mirror'), path: g.mirrorFile, exists: !!g.mirrorExists, sizeBytes: 0,
+						statusText: isMirrorSource ? t('sameAsSource') : (g.mirrorExists ? t('synced') : t('notSynced')),
+					}),
+				) : null,
+				g && g.exists && (g.sizeBytes || 0) > (g.renderBudgetBytes || BUDGET)
+					? h(StatusLine, { kind: 'warn' }, t('budgetWarning'))
+					: null,
+				err ? h(StatusLine, { kind: 'error' }, err) : null,
+				notice ? h(StatusLine, { kind: 'ok' }, notice) : null,
+				globalEditing && globalFile
+					? h(Editor, { t, readOnly, isGlobal: true, path: globalFile, onSaved: onChanged, onDeleted: onChanged })
+					: !readOnly
+						? h('div', null, h('button', { type: 'button', className: 'amdBtn', disabled: !globalFile, onClick: () => setGlobalEditing(true) }, t('editGlobal')))
+						: null,
 
 				/* Workspace section */
-				h('div', { className: 'amdSection' },
-					h('div', { className: 'amdSectionHead' },
-						h('span', { className: 'amdChevron' }, '▦'), t('workspaces')),
-					workspaces.length === 0
-						? h('div', { className: 'amdEmpty' }, t('noWorkspaces'))
-						: workspaces.map((row, i) =>
+				h('h2', { className: 'amdSectionHead' }, t('workspaces')),
+				workspaces.length === 0
+					? h('p', { className: 'amdEmpty' }, t('noWorkspaces'))
+					: h('div', { className: 'amdRows' },
+						workspaces.map((row, i) =>
 							h(WorkspaceRow, {
 								key: ((row.agentsMd && row.agentsMd.file) || row.path) + ':' + i,
 								t, readOnly, row,
@@ -449,9 +489,9 @@ window.__ModuleLoader__.load({
 								},
 								onChanged,
 							})),
-				),
+					),
 
-				h('div', { className: 'amdFooter' }, t('footer')),
+				h('p', { className: 'amdFooter' }, t('footer')),
 			);
 		}
 
